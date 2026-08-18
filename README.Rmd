@@ -50,7 +50,7 @@ Este estudio está enfocado en definir los efectos de la bacteriemia sobre la po
 ## Sección 2. Prospección y preparación de los datos
 
 ```{r, Importación de datos}
-bacteremia_dataset <- as.data.frame(readr::read_csv("Bacteremia_public_S2.csv"))
+bacteremia_dataset <- as.data.frame(readr::read_csv("data/Bacteremia_public_S2.csv"))
 ```
 
 ### 2.1 Descripción de los datos
@@ -133,6 +133,16 @@ dim(bacteremia_clean)
 ```
 
 Tras las transformaciones tenemos 9297 observaciones completas con 11 variables.
+
+**Guardar dataset limpio**
+
+```{r}
+if (!dir.exists("data")) {
+  dir.create("data")
+}
+
+saveRDS(bacteremia_clean, file = "data/bacteremia_clean.rds")
+```
 
 ### 2.2 Preguntas “objetivo”
 
