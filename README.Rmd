@@ -1,6 +1,6 @@
 ---
 title: "Bacteriemia. Análisis y predicciones"
-author: ""
+subtitle: "Trabajo realizado en el marco del Máster en Bioinformática y Bioestadística de la Universitat Oberta de Catalunya (UOC)."
 date: "`r Sys.Date()`"
 output: github_document
 editor_options: 
@@ -25,6 +25,8 @@ library(randomForest)
 library(shiny)
 library(GGally)
 ```
+
+Trabajo realizado en la Universitat Oberta de Catalunya.
 
 ## Sección 1. Contexto y objetivo del estudio. Datos
 
