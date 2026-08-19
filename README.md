@@ -1,7 +1,6 @@
-PEC4 - Software para el Análisis de Datos
+Bacteriemia. Análisis y predicciones
 ================
-Samara Sabsabi Soriano y Daniel Yagüe Puerto
-2026-08-16
+2026-08-19
 
 ## Sección 1. Contexto y objetivo del estudio. Datos
 
@@ -33,7 +32,7 @@ realizar un hemocultivo.
 ## Sección 2. Prospección y preparación de los datos
 
 ``` r
-bacteremia_dataset <- as.data.frame(readr::read_csv("Bacteremia_public_S2.csv"))
+bacteremia_dataset <- as.data.frame(readr::read_csv("data/Bacteremia_public_S2.csv"))
 ```
 
     ## Rows: 14691 Columns: 53
@@ -180,7 +179,8 @@ variables “SEX” y “BloodCulture” a factor.
 bacteremia_clean <- na.omit(bacteremia_subset)
 
 # Convertimos las variables "BloodCulture" y "SEX" a factor:
-bacteremia_clean$BloodCulture <- factor(bacteremia_clean$BloodCulture)
+bacteremia_clean$BloodCulture <- factor(bacteremia_clean$BloodCulture,
+                                        levels = c("yes", "no"))
 bacteremia_clean$SEX <- factor(bacteremia_clean$SEX,
                                levels = c(1, 2),
                                labels = c("male", "female"))
@@ -192,6 +192,16 @@ dim(bacteremia_clean)
 
 Tras las transformaciones tenemos 9297 observaciones completas con 11
 variables.
+
+**Guardar dataset limpio**
+
+``` r
+if (!dir.exists("data")) {
+  dir.create("data")
+}
+
+saveRDS(bacteremia_clean, file = "data/bacteremia_clean.rds")
+```
 
 ### 2.2 Preguntas “objetivo”
 
@@ -276,8 +286,8 @@ summary(bacteremia_clean)
 ```
 
     ##      SEX            AGE        BloodCulture      WBC              NEUR       
-    ##  male  :5375   Min.   :16.00   no :8476     Min.   :  0.12   Min.   :  0.00  
-    ##  female:3922   1st Qu.:42.00   yes: 821     1st Qu.:  6.84   1st Qu.: 70.79  
+    ##  male  :5375   Min.   :16.00   yes: 821     Min.   :  0.12   Min.   :  0.00  
+    ##  female:3922   1st Qu.:42.00   no :8476     1st Qu.:  6.84   1st Qu.: 70.79  
     ##                Median :58.00                Median :  9.89   Median : 79.46  
     ##                Mean   :56.16                Mean   : 10.95   Mean   : 76.44  
     ##                3rd Qu.:70.00                3rd Qu.: 13.80   3rd Qu.: 86.08  
@@ -327,8 +337,8 @@ tabla_AGE
     ## # A tibble: 2 × 4
     ##   BloodCulture AGE_media AGE_mediana AGE_sd
     ##   <fct>            <dbl>       <dbl>  <dbl>
-    ## 1 no                55.5          58   18.5
-    ## 2 yes               62.6          65   16.4
+    ## 1 yes               62.6          65   16.4
+    ## 2 no                55.5          58   18.5
 
 La media de la edad de los pacientes sin bacteriemia es de 55 años,
 presentando una mediana de 58 años y una desviación de 18.5 años. Para
@@ -354,7 +364,7 @@ boxplot(bacteremia_clean$AGE ~ bacteremia_clean$BloodCulture, col= c("#A2CD5A", 
         ylab = "Edad (años)")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 Seguidamente evaluaremos la incidencia de bacteriemias según la edad
 mediante una función que calcula la prevalencia por grupos de edad.
@@ -393,7 +403,7 @@ wilcox.test(AGE ~ BloodCulture, data = bacteremia_clean)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  AGE by BloodCulture
-    ## W = 2707777, p-value < 2.2e-16
+    ## W = 4251019, p-value < 2.2e-16
     ## alternative hypothesis: true location shift is not equal to 0
 
 Observando la distribución de edad según la presencia de bacteriemia, y
@@ -413,9 +423,9 @@ tabla_cont_sex
 ```
 
     ##         
-    ##            no  yes
-    ##   male   4906  469
-    ##   female 3570  352
+    ##           yes   no
+    ##   male    469 4906
+    ##   female  352 3570
 
 ``` r
 ggplot(bacteremia_clean, aes(x = SEX, fill = BloodCulture)) + 
@@ -486,10 +496,10 @@ tabla_funcion_organos
     ## # Groups:   SEX [2]
     ##   SEX    BloodCulture ALAT_Media ALAT_Mediana ALAT_sd CREA_Media CREA_Mediana
     ##   <fct>  <fct>             <dbl>        <dbl>   <dbl>      <dbl>        <dbl>
-    ## 1 male   no                 73.7           28    380.       73.7         1.08
-    ## 2 male   yes                66.6           31    128.       66.6         1.27
-    ## 3 female no                 61.2           22    297.       61.2         0.88
-    ## 4 female yes                56.3           28    104.       56.3         1.04
+    ## 1 male   yes                66.6           31    128.       66.6         1.27
+    ## 2 male   no                 73.7           28    380.       73.7         1.08
+    ## 3 female yes                56.3           28    104.       56.3         1.04
+    ## 4 female no                 61.2           22    297.       61.2         0.88
     ## # ℹ 1 more variable: CREA_sd <dbl>
 
 Al agrupar los valores por sexo, podemos observar una diferencia
@@ -563,7 +573,7 @@ wilcox.test(log_ALAT ~ BloodCulture, data = bacteremia_clean)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  log_ALAT by BloodCulture
-    ## W = 3149124, p-value = 6.837e-06
+    ## W = 3809672, p-value = 6.837e-06
     ## alternative hypothesis: true location shift is not equal to 0
 
 ``` r
@@ -574,7 +584,7 @@ wilcox.test(log_CREA ~ BloodCulture, data = bacteremia_clean)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  log_CREA by BloodCulture
-    ## W = 2788473, p-value < 2.2e-16
+    ## W = 4170323, p-value < 2.2e-16
     ## alternative hypothesis: true location shift is not equal to 0
 
 Basado en el test de wilcoxon hay diferencias significativas entre los
@@ -597,8 +607,8 @@ bacteremia_clean %>%
     ## # A tibble: 2 × 4
     ##   BloodCulture CRP_Media CRP_Mediana CRP_sd
     ##   <fct>            <dbl>       <dbl>  <dbl>
-    ## 1 no                10.6        8.34   9.41
-    ## 2 yes               14.2       11.9   10.7
+    ## 1 yes               14.2       11.9   10.7 
+    ## 2 no                10.6        8.34   9.41
 
 A primera vista se produce un aumento de la proteína C-reactiva en
 pacientes con bacteriemia.
@@ -636,7 +646,7 @@ wilcox.test(bacteremia_clean$log_CRP ~ bacteremia_clean$BloodCulture)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  bacteremia_clean$log_CRP by bacteremia_clean$BloodCulture
-    ## W = 2767442, p-value < 2.2e-16
+    ## W = 4191354, p-value < 2.2e-16
     ## alternative hypothesis: true location shift is not equal to 0
 
 Hay diferencias significativas entre los valores de proteína
@@ -665,8 +675,8 @@ tabla_WBC
     ## # A tibble: 2 × 4
     ##   BloodCulture WBC_media WBC_mediana WBC_sd
     ##   <fct>            <dbl>       <dbl>  <dbl>
-    ## 1 no                10.9        9.86   6.58
-    ## 2 yes               11.4       10.3    7.19
+    ## 1 yes               11.4       10.3    7.19
+    ## 2 no                10.9        9.86   6.58
 
 Observando tanto la media y la mediana, como el rango intercuartil en el
 boxplot, podemos observar que casi no hay diferencia entre el recuento
@@ -728,7 +738,7 @@ wilcox.test(WBC ~ BloodCulture, data = bacteremia_clean)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  WBC by BloodCulture
-    ## W = 3372558, p-value = 0.1457
+    ## W = 3586239, p-value = 0.1457
     ## alternative hypothesis: true location shift is not equal to 0
 
 Los pacientes con bacteriemia presentan un recuento leucocitario más
@@ -755,8 +765,8 @@ tabla_NEUR
     ## # A tibble: 2 × 4
     ##   BloodCulture NEUR_media NEUR_mediana NEUR_sd
     ##   <fct>             <dbl>        <dbl>   <dbl>
-    ## 1 no                 75.8         78.8    14.7
-    ## 2 yes                83.1         86.3    13.6
+    ## 1 yes                83.1         86.3    13.6
+    ## 2 no                 75.8         78.8    14.7
 
 Aparentemente hay un aumento de la proporción de neutrófilos en sangre
 en el grupo con bacteriemias respecto a los pacientes sin bacteriemia.
@@ -795,7 +805,7 @@ wilcox.test(NEUR ~ BloodCulture, data = bacteremia_clean)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  NEUR by BloodCulture
-    ## W = 2119545, p-value < 2.2e-16
+    ## W = 4839252, p-value < 2.2e-16
     ## alternative hypothesis: true location shift is not equal to 0
 
 Un p-valor muy pequeño (\< 2.2e-16) en el test de wilcoxon nos indica
@@ -824,8 +834,8 @@ tabla_LYMR
     ## # A tibble: 2 × 4
     ##   BloodCulture LYMR_media LYMR_mediana LYMR_sd
     ##   <fct>             <dbl>        <dbl>   <dbl>
-    ## 1 no                14.0         11.1     11.7
-    ## 2 yes                9.57         6.62    11.0
+    ## 1 yes                9.57         6.62    11.0
+    ## 2 no                14.0         11.1     11.7
 
 La proporción de linfocitos parece comportarse al contrario que la de
 neeutrófilos, con una reducción en el grupo de pacientes con
@@ -846,7 +856,7 @@ hist(log(linfocitos_bacteremia), breaks=20)
 hist(log(linfocitos_sin_bacteremia), breaks=40)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 Comprobamos la normalidad:
 
@@ -880,7 +890,7 @@ wilcox.test(LYMR ~ BloodCulture, data = bacteremia_clean)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  LYMR by BloodCulture
-    ## W = 4692371, p-value < 2.2e-16
+    ## W = 2266425, p-value < 2.2e-16
     ## alternative hypothesis: true location shift is not equal to 0
 
 Un p-valor muy pequeño (\< 2.2e-16) en el test de wilcoxon nos indica
@@ -909,8 +919,8 @@ tabla_PLT
     ## # A tibble: 2 × 4
     ##   BloodCulture PLT_media PLT_mediana PLT_sd
     ##   <fct>            <dbl>       <dbl>  <dbl>
-    ## 1 no                227.         210   120.
-    ## 2 yes               198.         186   115.
+    ## 1 yes               198.         186   115.
+    ## 2 no                227.         210   120.
 
 ``` r
 #Plaquetas de pacientes con bacteriemia
@@ -927,7 +937,7 @@ hist(log(plaquetas_bacteremia), breaks=20)
 hist(log(plaquetas_sin_bacteremia), breaks=20)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 Observamos en los histogramas que la dsitribución no se adapta
 perfectamente a una log-normal, por lo que realizamos un test de
@@ -942,7 +952,7 @@ wilcox.test(PLT ~ BloodCulture, data = bacteremia_clean)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  PLT by BloodCulture
-    ## W = 4021846, p-value = 1.498e-13
+    ## W = 2936951, p-value = 1.498e-13
     ## alternative hypothesis: true location shift is not equal to 0
 
 En el caso del recuento plaquetario, se observa una disminución
@@ -1202,26 +1212,6 @@ estandarizar_datos_bacteremia <- scale(bacteremia_clean[,sapply(bacteremia_clean
 pca_resultado <- prcomp(estandarizar_datos_bacteremia, center = TRUE, scale =
 TRUE)
 
-# Proyección de PC1 y PC2:
-pca_proyeccion <- as.data.frame(pca_resultado$x)
-
-pca_proyeccion$BloodCulture <- bacteremia_clean$BloodCulture
-
-ggplot(pca_proyeccion, aes(x = PC1, y = PC2, color = BloodCulture)) +
-  geom_point(alpha = 0.6, size = 2) + 
-  labs(
-    title = "Proyección del PCA: PC1 vs PC2",
-    x = "PC1",
-    y = "PC2",
-    color = "Bacteriemia"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(face = "bold"))
-```
-
-![](README_files/figure-gfm/PCA-1.png)<!-- -->
-
-``` r
 # Resumen de cuánta varianza explica cada componente:
 summary(pca_resultado)
 ```
@@ -1240,7 +1230,7 @@ summary(pca_resultado)
 plot(pca_resultado)
 ```
 
-![](README_files/figure-gfm/PCA-2.png)<!-- -->
+![](README_files/figure-gfm/PCA-1.png)<!-- -->
 
 ``` r
 cargos <- pca_resultado$rotation
@@ -1287,6 +1277,29 @@ cargos
     ## log_CREA  0.322292043  0.051320747
     ## log_CRP   0.569445740  0.286703703
 
+``` r
+# 1. Preparar datos con los primeros 4 componentes
+pca_proyeccion <- as.data.frame(pca_resultado$x[, 1:4])
+pca_proyeccion$BloodCulture <- bacteremia_clean$BloodCulture
+
+# 2. Generar matriz de dispersión
+ggpairs(
+  pca_proyeccion,
+  columns = 1:4,
+  mapping = aes(color = BloodCulture, fill = BloodCulture),
+  alpha = 0.5,
+) +
+  labs(title = "Matriz de cruce: Primeras 4 Componentes Principales") +
+  theme_minimal()
+```
+
+    ## Warning: The `...` argument of `ggpais()` is deprecated as of GGally 2.3.0.
+    ## This warning is displayed once every 8 hours.
+    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    ## generated.
+
+![](README_files/figure-gfm/Matriz%20de%20cruce-1.png)<!-- -->
+
 La PC1 parece corresponder a la respuesta immunológica, con las cargas
 más fuertes siendo los leucocitos (WBC), neutrófilos (NEUR) y linfocitos
 (LYMR).
@@ -1297,19 +1310,12 @@ de reducción de plaquetas.
 
 Observando la proyección de las componentes PC1 contra PC2, no
 observamos una separación de los casos de bacteriemia del resto de
-pacientes, probablemente al tratarse de variables que pueden ser
-afectaddas por diferentes enfermedades y afecciones, no solamente la
-bacteriemia. A pesar de esto, deducimos que las variables que contienen
-más información para clasificar los pacientes entre aquellos a los que
-se les debería hacer un hemocultivo por sospecha de posible bacteriemia
-y aquellos que a los que no sería necesario son las que tienen más
-fuerza en la componentes principales 1 y 2, especialmente aquellas que
-reducen el valor de las componentes, siendo la esquina inferior
-izquierda de la proyección la que parece contener mayor frecuencia de
-bacteriemias.
+pacientes, lo que indica que las diferencias entre los pacientes con y
+sin bacteriemia no se explica con una simple combinación lineal de las
+variables. El resto de componentes principales 1-4 tampoco muestran
+ninguna relación lineal.
 
-**Aprendizaje supervisado para predecir cuando es procedente hacer un
-hemocultivo:**
+**Aprendizaje supervisado:**
 
 Utilizando el amplio conjunto de datos de Bacteremia, definimos un
 modelo capaz de predecir con precisión a partir de las variables del
@@ -1332,7 +1338,7 @@ data_train <- datos_modelo[split, ]
 data_test  <- datos_modelo[!split, ]
 
 # Como hay mucho desequilibrio entre la cantidad de pacientes con bacteriemia y sin
-# reducimos el tamaño de la muestra de entrenamiento para que hay la misma cantidad
+# reducimos el tamaño de la muestra de entrenamiento para que haya la misma cantidad
 # de positivos que negativos:
 train_yes <- data_train[data_train$BloodCulture == "yes", ]
 train_no  <- data_train[data_train$BloodCulture == "no", ]
@@ -1351,9 +1357,9 @@ confusion_matrix
     ## Confusion Matrix and Statistics
     ## 
     ##           Reference
-    ## Prediction   no  yes
-    ##        no  1063   36
-    ##        yes  632  128
+    ## Prediction  yes   no
+    ##        yes  128  632
+    ##        no    36 1063
     ##                                           
     ##                Accuracy : 0.6407          
     ##                  95% CI : (0.6184, 0.6625)
@@ -1377,19 +1383,187 @@ confusion_matrix
     ## 
 
 ``` r
-precision <- 0.16842         
-recall <- 0.78049
-F1 <- 2 * (precision * recall) / (precision + recall)
-F1
+# Hacemos downsampling en el cross-validation para tener en cuenta el desequilibrio entre pacientes con y sin bacteriemia:
+cv_control_down <- trainControl(
+  method = "cv",
+  number = 10,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  sampling = "down"
+)
 ```
 
-    ## [1] 0.277055
+Comparamos 3 modelos de aprendizaje supervisado, regresión logística,
+Support Vector Machien y Random Forest.
 
-El F1-score es relativamente bajo debido a la baja precisión del modelo,
-pero en el ámbito clínico queremos priorizar la reducción de los falsos
-negativos, para no pasar por alto ningún positivo en bacteriemia. Por
-esta razón vale la pena un elevado número de falsos positivos y un
-número más reducido de falsos negativos.
+Para el model SVM usamos el kernel radial debido a la naturaleza no
+lineal de los resultados obtenidos en el PCA.
+
+``` r
+set.seed(999)
+# Regresión logística
+model_log <- train(
+  BloodCulture ~ ., 
+  data = data_train,
+  method = "glm",
+  family = "binomial",
+  trControl = cv_control_down,
+  metric = "ROC"
+)
+
+# Support Vector Machine (kernel radial)
+model_svm <- train(
+  BloodCulture ~ ., 
+  data = data_train,
+  method = "svmRadial",
+  preProcess = c("center", "scale"),
+  trControl = cv_control_down,
+  metric = "ROC"
+)
+
+# Random Forest
+model_rf <- train(
+  BloodCulture ~ ., 
+  data = data_train,
+  method = "rf",
+  trControl = cv_control_down,
+  metric = "ROC"
+)
+```
+
+``` r
+# Compilar resultados de la validación cruzada
+resamples_list <- resamples(list(
+  `Regresión Logística` = model_log,
+  `SVM (Radial)`          = model_svm,
+  `Random Forest`       = model_rf
+))
+
+# Resumen numérico
+summary(resamples_list)
+```
+
+    ## 
+    ## Call:
+    ## summary.resamples(object = resamples_list)
+    ## 
+    ## Models: Regresión Logística, SVM (Radial), Random Forest 
+    ## Number of resamples: 10 
+    ## 
+    ## ROC 
+    ##                          Min.   1st Qu.    Median      Mean   3rd Qu.      Max.
+    ## Regresión Logística 0.6472245 0.6668500 0.7049377 0.7015169 0.7382272 0.7481005
+    ## SVM (Radial)        0.6767453 0.7043321 0.7225463 0.7197951 0.7414692 0.7518101
+    ## Random Forest       0.6788460 0.6926005 0.7033331 0.7113905 0.7244402 0.7565464
+    ##                     NA's
+    ## Regresión Logística    0
+    ## SVM (Radial)           0
+    ## Random Forest          0
+    ## 
+    ## Sens 
+    ##                          Min.   1st Qu.    Median      Mean   3rd Qu.      Max.
+    ## Regresión Logística 0.5757576 0.6274476 0.6818182 0.6789277 0.7307692 0.7727273
+    ## SVM (Radial)        0.6212121 0.6653846 0.6818182 0.6788578 0.6931818 0.7272727
+    ## Random Forest       0.5454545 0.6250000 0.6641026 0.6500932 0.6805944 0.7230769
+    ##                     NA's
+    ## Regresión Logística    0
+    ## SVM (Radial)           0
+    ## Random Forest          0
+    ## 
+    ## Spec 
+    ##                          Min.   1st Qu.    Median      Mean   3rd Qu.      Max.
+    ## Regresión Logística 0.5707965 0.6157817 0.6356932 0.6261581 0.6382743 0.6480118
+    ## SVM (Radial)        0.6209440 0.6320059 0.6504425 0.6488678 0.6603982 0.6769912
+    ## Random Forest       0.6371681 0.6581858 0.6659292 0.6677426 0.6766224 0.7054492
+    ##                     NA's
+    ## Regresión Logística    0
+    ## SVM (Radial)           0
+    ## Random Forest          0
+
+``` r
+# Gráfico de comparación
+bwplot(resamples_list, metric = c("ROC", "Sens", "Spec"), 
+       main = "Comparación en Cross-Validation (Train)")
+```
+
+![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+``` r
+# Predecir probabilidades
+prob_log <- predict(model_log, newdata = data_test, type = "prob")
+prob_svm <- predict(model_svm, newdata = data_test, type = "prob")
+prob_rf  <- predict(model_rf,  newdata = data_test, type = "prob")
+
+# Calcular ROC
+roc_log <- roc(data_test$BloodCulture, prob_log[["yes"]])
+```
+
+    ## Setting levels: control = yes, case = no
+
+    ## Setting direction: controls > cases
+
+``` r
+roc_svm <- roc(data_test$BloodCulture, prob_svm[["yes"]])
+```
+
+    ## Setting levels: control = yes, case = no
+    ## Setting direction: controls > cases
+
+``` r
+roc_rf  <- roc(data_test$BloodCulture, prob_rf[["yes"]])
+```
+
+    ## Setting levels: control = yes, case = no
+    ## Setting direction: controls > cases
+
+``` r
+# Gráfico Curvas ROC
+plot(roc_log, col = "blue", print.auc = FALSE, main = "Curvas ROC (Test)")
+plot(roc_svm, col = "red", add = TRUE)
+plot(roc_rf,  col = "green", add = TRUE)
+
+legend("bottomright", 
+       legend = c(
+         paste0("Reg. Logística (AUC = ", round(auc(roc_log), 3), ")"),
+         paste0("SVM Radial (AUC = ", round(auc(roc_svm), 3), ")"),
+         paste0("Random Forest (AUC = ", round(auc(roc_rf), 3), ")")
+       ),
+       col = c("blue", "red", "green"), 
+       lwd = 2)
+```
+
+![](README_files/figure-gfm/Predicciones-1.png)<!-- -->
+
+``` r
+# Predicciones de clase en Test
+pred_log <- predict(model_log, newdata = data_test)
+pred_svm <- predict(model_svm, newdata = data_test)
+pred_rf  <- predict(model_rf,  newdata = data_test)
+
+# Matrices de Confusión
+cm_log <- confusionMatrix(pred_log, data_test$BloodCulture, positive = "yes")
+cm_svm <- confusionMatrix(pred_svm, data_test$BloodCulture, positive = "yes")
+cm_rf  <- confusionMatrix(pred_rf,  data_test$BloodCulture, positive = "yes")
+
+# Tabla comparativa
+tabla_comparativa <- data.frame(
+  Modelo = c("Regresión Logística", "SVM Radial", "Random Forest"),
+  AUC_ROC = c(auc(roc_log), auc(roc_svm), auc(roc_rf)),
+  Accuracy = c(cm_log$overall["Accuracy"], cm_svm$overall["Accuracy"], cm_rf$overall["Accuracy"]),
+  Sensibilidad = c(cm_log$byClass["Sensitivity"], cm_svm$byClass["Sensitivity"], cm_rf$byClass["Sensitivity"]),
+  Especificidad = c(cm_log$byClass["Specificity"], cm_svm$byClass["Specificity"], cm_rf$byClass["Specificity"])
+)
+
+knitr::kable(tabla_comparativa, digits = 3, caption = "Métricas de Evaluación en el Conjunto de Prueba")
+```
+
+| Modelo              | AUC_ROC | Accuracy | Sensibilidad | Especificidad |
+|:--------------------|--------:|---------:|-------------:|--------------:|
+| Regresión Logística |   0.741 |    0.632 |        0.732 |         0.622 |
+| SVM Radial          |   0.731 |    0.649 |        0.732 |         0.641 |
+| Random Forest       |   0.735 |    0.665 |        0.720 |         0.660 |
+
+Métricas de Evaluación en el Conjunto de Prueba
 
 ## Sección 5. Visualización
 
