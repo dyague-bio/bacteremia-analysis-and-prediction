@@ -1,6 +1,6 @@
 ---
-title: "PEC4 - Software para el Análisis de Datos"
-author: "Samara Sabsabi Soriano y Daniel Yagüe Puerto"
+title: "Bacteriemia. Análisis y predicciones"
+author: ""
 date: "`r Sys.Date()`"
 output: github_document
 editor_options: 
