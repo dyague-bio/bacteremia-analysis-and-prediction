@@ -2,6 +2,9 @@ Bacteriemia. Análisis y predicciones
 ================
 2026-08-19
 
+Trabajo realizado en el marco del Máster en Bioinformática y
+Bioestadística de la Universitat Oberta de Catalunya (UOC).
+
 ## Sección 1. Contexto y objetivo del estudio. Datos
 
 Se ha seleccionado el conjunto de datos Bacteremia procedentes del
