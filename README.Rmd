@@ -942,6 +942,10 @@ tabla_comparativa <- data.frame(
 knitr::kable(tabla_comparativa, digits = 3, caption = "Métricas de Evaluación en el Conjunto de Prueba")
 ```
 
+Al encontrarnos en un caso clínico, queremos maximizar la sensibilidad.
+Por lo tanto, aunque los 3 modelos tienen un rendimiento similar, los modelos SVM y regresión logística presentan mayor sensibilidad.
+Entre estos dos, el **SVM** con kernel radial presenta valores de accuracy y especificidad más elevados.
+
 ## Sección 5. Visualización
 
 Creamos una aplicación Shiny para visualizar las distribuciones de las variables y su relación con la variable "BloodCulture" que determina la presencia de bacteriemia.
