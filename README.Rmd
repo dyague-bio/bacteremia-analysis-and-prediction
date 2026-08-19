@@ -20,7 +20,10 @@ library(survival)
 library(caTools)
 library(e1071)
 library(caret)
+library(pROC)
+library(randomForest)
 library(shiny)
+library(GGally)
 ```
 
 ## Sección 1. Contexto y objetivo del estudio. Datos
@@ -124,7 +127,8 @@ También convertimos las variables “SEX” y “BloodCulture” a factor.
 bacteremia_clean <- na.omit(bacteremia_subset)
 
 # Convertimos las variables "BloodCulture" y "SEX" a factor:
-bacteremia_clean$BloodCulture <- factor(bacteremia_clean$BloodCulture)
+bacteremia_clean$BloodCulture <- factor(bacteremia_clean$BloodCulture,
+                                        levels = c("yes", "no"))
 bacteremia_clean$SEX <- factor(bacteremia_clean$SEX,
                                levels = c(1, 2),
                                labels = c("male", "female"))
@@ -759,22 +763,6 @@ estandarizar_datos_bacteremia <- scale(bacteremia_clean[,sapply(bacteremia_clean
 pca_resultado <- prcomp(estandarizar_datos_bacteremia, center = TRUE, scale =
 TRUE)
 
-# Proyección de PC1 y PC2:
-pca_proyeccion <- as.data.frame(pca_resultado$x)
-
-pca_proyeccion$BloodCulture <- bacteremia_clean$BloodCulture
-
-ggplot(pca_proyeccion, aes(x = PC1, y = PC2, color = BloodCulture)) +
-  geom_point(alpha = 0.6, size = 2) + 
-  labs(
-    title = "Proyección del PCA: PC1 vs PC2",
-    x = "PC1",
-    y = "PC2",
-    color = "Bacteriemia"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(face = "bold"))
-
 # Resumen de cuánta varianza explica cada componente:
 summary(pca_resultado)
 plot(pca_resultado)
@@ -782,14 +770,30 @@ cargos <- pca_resultado$rotation
 cargos
 ```
 
+```{r, Matriz de cruce, message=FALSE}
+# 1. Preparar datos con los primeros 4 componentes
+pca_proyeccion <- as.data.frame(pca_resultado$x[, 1:4])
+pca_proyeccion$BloodCulture <- bacteremia_clean$BloodCulture
+
+# 2. Generar matriz de dispersión
+ggpairs(
+  pca_proyeccion,
+  columns = 1:4,
+  mapping = aes(color = BloodCulture, fill = BloodCulture),
+  alpha = 0.5,
+) +
+  labs(title = "Matriz de cruce: Primeras 4 Componentes Principales") +
+  theme_minimal()
+```
+
 La PC1 parece corresponder a la respuesta immunológica, con las cargas más fuertes siendo los leucocitos (WBC), neutrófilos (NEUR) y linfocitos (LYMR).
 
 Por otro lado la PC2, agrupa la influencia negativa de variables como la edad, el aumento de creatinina y de glucosa en sangre, a la vez que la de reducción de plaquetas.
 
-Observando la proyección de las componentes PC1 contra PC2, no observamos una separación de los casos de bacteriemia del resto de pacientes, probablemente al tratarse de variables que pueden ser afectaddas por diferentes enfermedades y afecciones, no solamente la bacteriemia.
-A pesar de esto, deducimos que las variables que contienen más información para clasificar los pacientes entre aquellos a los que se les debería hacer un hemocultivo por sospecha de posible bacteriemia y aquellos que a los que no sería necesario son las que tienen más fuerza en la componentes principales 1 y 2, especialmente aquellas que reducen el valor de las componentes, siendo la esquina inferior izquierda de la proyección la que parece contener mayor frecuencia de bacteriemias.
+Observando la proyección de las componentes PC1 contra PC2, no observamos una separación de los casos de bacteriemia del resto de pacientes, lo que indica que las diferencias entre los pacientes con y sin bacteriemia no se explica con una simple combinación lineal de las variables.
+El resto de componentes principales 1-4 tampoco muestran ninguna relación lineal.
 
-**Aprendizaje supervisado para predecir cuando es procedente hacer un hemocultivo:**
+**Aprendizaje supervisado:**
 
 Utilizando el amplio conjunto de datos de Bacteremia, definimos un modelo capaz de predecir con precisión a partir de las variables del análisis de sangre, qué pacientes deberían realizarse un hemocultivo para confirmar o descartar la bacteriemia.
 Otra parte del propio conjunto de datos se utilizará como prueba para ver la capacidad de predicción del modelo.
@@ -808,7 +812,7 @@ data_train <- datos_modelo[split, ]
 data_test  <- datos_modelo[!split, ]
 
 # Como hay mucho desequilibrio entre la cantidad de pacientes con bacteriemia y sin
-# reducimos el tamaño de la muestra de entrenamiento para que hay la misma cantidad
+# reducimos el tamaño de la muestra de entrenamiento para que haya la misma cantidad
 # de positivos que negativos:
 train_yes <- data_train[data_train$BloodCulture == "yes", ]
 train_no  <- data_train[data_train$BloodCulture == "no", ]
@@ -824,15 +828,118 @@ confusion_matrix <- caret::confusionMatrix(predictions, data_test$BloodCulture, 
 confusion_matrix
 ```
 
-```{r}
-precision <- 0.16842         
-recall <- 0.78049
-F1 <- 2 * (precision * recall) / (precision + recall)
-F1
+```{r, Cross-Validation}
+# Hacemos downsampling en el cross-validation para tener en cuenta el desequilibrio entre pacientes con y sin bacteriemia:
+cv_control_down <- trainControl(
+  method = "cv",
+  number = 10,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  sampling = "down"
+)
 ```
 
-El F1-score es relativamente bajo debido a la baja precisión del modelo, pero en el ámbito clínico queremos priorizar la reducción de los falsos negativos, para no pasar por alto ningún positivo en bacteriemia.
-Por esta razón vale la pena un elevado número de falsos positivos y un número más reducido de falsos negativos.
+Comparamos 3 modelos de aprendizaje supervisado, regresión logística, Support Vector Machien y Random Forest.
+
+Para el model SVM usamos el kernel radial debido a la naturaleza no lineal de los resultados obtenidos en el PCA.
+
+```{r, Modelos supervisados}
+set.seed(999)
+# Regresión logística
+model_log <- train(
+  BloodCulture ~ ., 
+  data = data_train,
+  method = "glm",
+  family = "binomial",
+  trControl = cv_control_down,
+  metric = "ROC"
+)
+
+# Support Vector Machine (kernel radial)
+model_svm <- train(
+  BloodCulture ~ ., 
+  data = data_train,
+  method = "svmRadial",
+  preProcess = c("center", "scale"),
+  trControl = cv_control_down,
+  metric = "ROC"
+)
+
+# Random Forest
+model_rf <- train(
+  BloodCulture ~ ., 
+  data = data_train,
+  method = "rf",
+  trControl = cv_control_down,
+  metric = "ROC"
+)
+```
+
+```{r}
+# Compilar resultados de la validación cruzada
+resamples_list <- resamples(list(
+  `Regresión Logística` = model_log,
+  `SVM (Radial)`          = model_svm,
+  `Random Forest`       = model_rf
+))
+
+# Resumen numérico
+summary(resamples_list)
+
+# Gráfico de comparación
+bwplot(resamples_list, metric = c("ROC", "Sens", "Spec"), 
+       main = "Comparación en Cross-Validation (Train)")
+```
+
+```{r, Predicciones}
+# Predecir probabilidades
+prob_log <- predict(model_log, newdata = data_test, type = "prob")
+prob_svm <- predict(model_svm, newdata = data_test, type = "prob")
+prob_rf  <- predict(model_rf,  newdata = data_test, type = "prob")
+
+# Calcular ROC
+roc_log <- roc(data_test$BloodCulture, prob_log[["yes"]])
+roc_svm <- roc(data_test$BloodCulture, prob_svm[["yes"]])
+roc_rf  <- roc(data_test$BloodCulture, prob_rf[["yes"]])
+
+# Gráfico Curvas ROC
+plot(roc_log, col = "blue", print.auc = FALSE, main = "Curvas ROC (Test)")
+plot(roc_svm, col = "red", add = TRUE)
+plot(roc_rf,  col = "green", add = TRUE)
+
+legend("bottomright", 
+       legend = c(
+         paste0("Reg. Logística (AUC = ", round(auc(roc_log), 3), ")"),
+         paste0("SVM Radial (AUC = ", round(auc(roc_svm), 3), ")"),
+         paste0("Random Forest (AUC = ", round(auc(roc_rf), 3), ")")
+       ),
+       col = c("blue", "red", "green"), 
+       lwd = 2)
+
+```
+
+```{r}
+# Predicciones de clase en Test
+pred_log <- predict(model_log, newdata = data_test)
+pred_svm <- predict(model_svm, newdata = data_test)
+pred_rf  <- predict(model_rf,  newdata = data_test)
+
+# Matrices de Confusión
+cm_log <- confusionMatrix(pred_log, data_test$BloodCulture, positive = "yes")
+cm_svm <- confusionMatrix(pred_svm, data_test$BloodCulture, positive = "yes")
+cm_rf  <- confusionMatrix(pred_rf,  data_test$BloodCulture, positive = "yes")
+
+# Tabla comparativa
+tabla_comparativa <- data.frame(
+  Modelo = c("Regresión Logística", "SVM Radial", "Random Forest"),
+  AUC_ROC = c(auc(roc_log), auc(roc_svm), auc(roc_rf)),
+  Accuracy = c(cm_log$overall["Accuracy"], cm_svm$overall["Accuracy"], cm_rf$overall["Accuracy"]),
+  Sensibilidad = c(cm_log$byClass["Sensitivity"], cm_svm$byClass["Sensitivity"], cm_rf$byClass["Sensitivity"]),
+  Especificidad = c(cm_log$byClass["Specificity"], cm_svm$byClass["Specificity"], cm_rf$byClass["Specificity"])
+)
+
+knitr::kable(tabla_comparativa, digits = 3, caption = "Métricas de Evaluación en el Conjunto de Prueba")
+```
 
 ## Sección 5. Visualización
 
