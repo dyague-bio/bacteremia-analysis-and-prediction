@@ -141,7 +141,7 @@ Tras las transformaciones tenemos 9297 observaciones completas con 11 variables.
 
 **Guardar dataset limpio**
 
-```{r}
+```{r, guardado}
 if (!dir.exists("data")) {
   dir.create("data")
 }
@@ -215,7 +215,7 @@ Realizamos un resumen estadístico de nuestras variables y observamos las distri
 summary(bacteremia_clean)
 ```
 
-```{r, Histogramas}
+```{r, histogramas_biomarcadores}
 par(mfrow=c(2,4))
 hist(bacteremia_clean$CRP, main = "C-Reactive Protein")
 hist(bacteremia_clean$ALAT, main = "Alanina transaminasa")
@@ -230,7 +230,7 @@ hist(bacteremia_clean$PLT, main = "Plaquetas")
 
 **Edad:** Observamos los valores estadísticos de la edad en los grupos con y sin bacteriemia:
 
-```{r}
+```{r, estadísticos edad}
 tabla_AGE <- bacteremia_clean %>%
   group_by(BloodCulture) %>%
   summarise(AGE_media = mean(AGE),
@@ -245,7 +245,7 @@ Para los pacientes con bacteriema la media sube a 62.6 años, la mediana a 65 y 
 
 Relación entre edad y bacteriemia: Se muestra histogramas de la frecuencia de las edades según hemocultivo y un boxplot para observar la distribución de la edad en pacientes con bacteriemia negativa y positiva.
 
-```{r}
+```{r, histogramas_edad}
 par(mfrow=c(1,3))
 
 hist(bacteremia_clean$AGE[bacteremia_clean$BloodCulture == "no"], breaks=20, col = "#BFEFFF",
@@ -262,7 +262,7 @@ boxplot(bacteremia_clean$AGE ~ bacteremia_clean$BloodCulture, col= c("#A2CD5A", 
 Seguidamente evaluaremos la incidencia de bacteriemias según la edad mediante una función que calcula la prevalencia por grupos de edad.
 También comprobaremos la normalidad de la variable, y en caso que no siga una distribución normal evaluamos la diferencia de las distribuciones según el resultado del hemocultivo medianet un test de wilcoxon:
 
-```{r}
+```{r, incidencia por edad}
 # Prevalencia:
 prevalencia_edad(bacteremia_clean)
 # Test de normalidad:
@@ -282,7 +282,7 @@ tabla_cont_sex = table(bacteremia_clean$SEX, bacteremia_clean$BloodCulture)
 tabla_cont_sex
 ```
 
-```{r, Gráfico de barras}
+```{r, gráfico_barras_sexo}
 ggplot(bacteremia_clean, aes(x = SEX, fill = BloodCulture)) + 
   geom_bar(position = "fill") + 
   theme_minimal() +
@@ -291,7 +291,7 @@ ggplot(bacteremia_clean, aes(x = SEX, fill = BloodCulture)) +
 
 Para confirmar que no haya ninguna relación entre las variables sexo y hemocultivo realizamos una prueba de la ji cuadrado y comprovamos la prevalencia:
 
-```{r, Relación sexo-bacteriemia}
+```{r, Relación_sexo-bacteriemia}
 # Prueba de la ji cuadrado:
 chisq.test(tabla_cont_sex)
 # Prevalencia:
@@ -324,7 +324,7 @@ La gran diferencia entre las medias y las medianas se debe probablemente a otras
 
 Para representar las distribuciones transformaremos las variables a logarítmicas, ya que viendo los histogramas parece que las variables podrían seguir una distribución log-normal, muy común en biología:
 
-```{r, Boxplots CREA y ALAT}
+```{r, boxplots_CREA_ALAT}
 # Transformación logarítmica:
 bacteremia_clean$log_ALAT <- log(bacteremia_clean$ALAT)
 bacteremia_clean$log_CREA <- log(bacteremia_clean$CREA)
@@ -348,7 +348,7 @@ g_crea <- ggplot(bacteremia_clean, aes(x = BloodCulture, y = log_CREA, fill = Bl
 A pesar de la transformación logarítmica no parece que las variables CREA y ALAT siguen una distribución log-normal.
 Comprobamos de todas maneras la normalidad:
 
-```{r}
+```{r, }
 # Test de normalidad:
 nortest::lillie.test(log(bacteremia_clean$ALAT))
 nortest::lillie.test(log(bacteremia_clean$CREA))
@@ -377,7 +377,7 @@ bacteremia_clean %>%
 
 A primera vista se produce un aumento de la proteína C-reactiva en pacientes con bacteriemia.
 
-```{r, Boxplot CRP}
+```{r, boxplot_CRP}
 bacteremia_clean$log_CRP <- log(bacteremia_clean$CRP + 1)
 ggplot(bacteremia_clean, aes(x = BloodCulture, y = log_CRP, fill = BloodCulture)) +
   geom_boxplot(alpha = 0.7) + theme_minimal() + labs(title = "CRP - Inflamación", y = "log(CRP)")
@@ -425,7 +425,7 @@ leucocitos_bacteremia = bacteremia_clean$WBC[bacteremia_clean$BloodCulture == "y
 leucocitos_sin_bacteremia = bacteremia_clean$WBC[bacteremia_clean$BloodCulture == "no"]
 ```
 
-```{r, Gráficos WBC}
+```{r, histogramas_WBC}
 par(mfrow=c(1,3))
 
 hist(log(leucocitos_bacteremia), breaks=20, 
@@ -441,7 +441,7 @@ boxplot(log(WBC) ~ BloodCulture, data = bacteremia_clean, col= c("#A2CD5A", "#EE
 
 Realizamos un test de normalidad de Kilmogorov-Smirnov y analizamos el QQplot:
 
-```{r, Test de normalidad WBC}
+```{r, qqplot_WBC}
 nortest::lillie.test(log(bacteremia_clean$WBC))
 qqnorm(log(bacteremia_clean$WBC))
 qqline(log(bacteremia_clean$WBC), col = "red")
@@ -480,7 +480,7 @@ neutrofilos_bacteremia = bacteremia_clean$NEUR[bacteremia_clean$BloodCulture == 
 neutrofilos_sin_bacteremia = bacteremia_clean$NEUR[bacteremia_clean$BloodCulture == "yes"]
 ```
 
-```{r, Gráficos NEUR}
+```{r, histogramas_NEUR}
 par(mfrow=c(1,2))
 
 hist(neutrofilos_bacteremia, breaks=20,
@@ -525,7 +525,7 @@ linfocitos_bacteremia = bacteremia_clean$LYMR[bacteremia_clean$BloodCulture == "
 linfocitos_sin_bacteremia = bacteremia_clean$LYMR[bacteremia_clean$BloodCulture == "no"]
 ```
 
-```{r}
+```{r, histograma_linfocitos}
 par(mfrow=c(1,2))
 
 hist(log(linfocitos_bacteremia), breaks=20)
@@ -534,7 +534,7 @@ hist(log(linfocitos_sin_bacteremia), breaks=40)
 
 Comprobamos la normalidad:
 
-```{r, Test de normalidad LYMR}
+```{r, qqplot_LYMR}
 nortest::lillie.test(log(bacteremia_clean$LYMR + 1))
 qqnorm(log(bacteremia_clean$WBC))
 qqline(log(bacteremia_clean$WBC), col = "red")
@@ -572,7 +572,7 @@ plaquetas_bacteremia = bacteremia_clean$PLT[bacteremia_clean$BloodCulture == "ye
 plaquetas_sin_bacteremia = bacteremia_clean$PLT[bacteremia_clean$BloodCulture == "no"]
 ```
 
-```{r}
+```{r, histograma_PLT}
 par(mfrow= c(1, 2))
 
 hist(log(plaquetas_bacteremia), breaks=20)
@@ -771,7 +771,7 @@ cargos <- pca_resultado$rotation
 cargos
 ```
 
-```{r, Matriz de cruce, message=FALSE}
+```{r, matriz_cruce, message=FALSE}
 # 1. Preparar datos con los primeros 4 componentes
 pca_proyeccion <- as.data.frame(pca_resultado$x[, 1:4])
 pca_proyeccion$BloodCulture <- bacteremia_clean$BloodCulture
@@ -876,7 +876,7 @@ model_rf <- train(
 )
 ```
 
-```{r}
+```{r, cross-validation}
 # Compilar resultados de la validación cruzada
 resamples_list <- resamples(list(
   `Regresión Logística` = model_log,
@@ -892,7 +892,7 @@ bwplot(resamples_list, metric = c("ROC", "Sens", "Spec"),
        main = "Comparación en Cross-Validation (Train)")
 ```
 
-```{r, Predicciones}
+```{r, ROC_curves}
 # Predecir probabilidades
 prob_log <- predict(model_log, newdata = data_test, type = "prob")
 prob_svm <- predict(model_svm, newdata = data_test, type = "prob")

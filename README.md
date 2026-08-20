@@ -1,6 +1,6 @@
 Bacteriemia. Análisis y predicciones
 ================
-2026-08-19
+2026-08-20
 
 Trabajo realizado en el marco del Máster en Bioinformática y
 Bioestadística de la Universitat Oberta de Catalunya (UOC).
@@ -322,7 +322,7 @@ hist(bacteremia_clean$LYMR, main = "Linfocitos%")
 hist(bacteremia_clean$PLT, main = "Plaquetas")
 ```
 
-![](README_files/figure-gfm/Histogramas-1.png)<!-- -->
+![](README_files/figure-gfm/histogramas_biomarcadores-1.png)<!-- -->
 
 **Edad:** Observamos los valores estadísticos de la edad en los grupos
 con y sin bacteriemia:
@@ -367,7 +367,7 @@ boxplot(bacteremia_clean$AGE ~ bacteremia_clean$BloodCulture, col= c("#A2CD5A", 
         ylab = "Edad (años)")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](README_files/figure-gfm/histogramas_edad-1.png)<!-- -->
 
 Seguidamente evaluaremos la incidencia de bacteriemias según la edad
 mediante una función que calcula la prevalencia por grupos de edad.
@@ -437,7 +437,7 @@ ggplot(bacteremia_clean, aes(x = SEX, fill = BloodCulture)) +
   labs(title = "Proporción de bacteriemia según el sexo", x = "Sexo", y = "proporción")
 ```
 
-![](README_files/figure-gfm/Gráfico%20de%20barras-1.png)<!-- -->
+![](README_files/figure-gfm/gráfico_barras_sexo-1.png)<!-- -->
 
 Para confirmar que no haya ninguna relación entre las variables sexo y
 hemocultivo realizamos una prueba de la ji cuadrado y comprovamos la
@@ -537,7 +537,7 @@ g_crea <- ggplot(bacteremia_clean, aes(x = BloodCulture, y = log_CREA, fill = Bl
 (g_alat + g_crea)
 ```
 
-![](README_files/figure-gfm/Boxplots%20CREA%20y%20ALAT-1.png)<!-- -->
+![](README_files/figure-gfm/boxplots_CREA_ALAT-1.png)<!-- -->
 
 A pesar de la transformación logarítmica no parece que las variables
 CREA y ALAT siguen una distribución log-normal. Comprobamos de todas
@@ -622,7 +622,7 @@ ggplot(bacteremia_clean, aes(x = BloodCulture, y = log_CRP, fill = BloodCulture)
   geom_boxplot(alpha = 0.7) + theme_minimal() + labs(title = "CRP - Inflamación", y = "log(CRP)")
 ```
 
-![](README_files/figure-gfm/Boxplot%20CRP-1.png)<!-- -->
+![](README_files/figure-gfm/boxplot_CRP-1.png)<!-- -->
 
 Comprobamos la normalidad:
 
@@ -707,7 +707,7 @@ boxplot(log(WBC) ~ BloodCulture, data = bacteremia_clean, col= c("#A2CD5A", "#EE
         ylab = "Edad (años)")
 ```
 
-![](README_files/figure-gfm/Gráficos%20WBC-1.png)<!-- -->
+![](README_files/figure-gfm/histogramas_WBC-1.png)<!-- -->
 
 Realizamos un test de normalidad de Kilmogorov-Smirnov y analizamos el
 QQplot:
@@ -727,7 +727,7 @@ qqnorm(log(bacteremia_clean$WBC))
 qqline(log(bacteremia_clean$WBC), col = "red")
 ```
 
-![](README_files/figure-gfm/Test%20de%20normalidad%20WBC-1.png)<!-- -->
+![](README_files/figure-gfm/qqplot_WBC-1.png)<!-- -->
 
 Como la variable no se ajusta a una distribución log-normal realizamos
 un test de wilcoxon para comparar las distribuciones de WBC entre ambos
@@ -793,7 +793,7 @@ hist(neutrofilos_sin_bacteremia, breaks=20,
      xlab = "Neutrófilos %")
 ```
 
-![](README_files/figure-gfm/Gráficos%20NEUR-1.png)<!-- -->
+![](README_files/figure-gfm/histogramas_NEUR-1.png)<!-- -->
 
 Observando los histogramas vemos claramente que la distribución de la
 variable no sigue una distribución normal, por lo que realizamos un test
@@ -859,7 +859,7 @@ hist(log(linfocitos_bacteremia), breaks=20)
 hist(log(linfocitos_sin_bacteremia), breaks=40)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](README_files/figure-gfm/histograma_linfocitos-1.png)<!-- -->
 
 Comprobamos la normalidad:
 
@@ -878,7 +878,7 @@ qqnorm(log(bacteremia_clean$WBC))
 qqline(log(bacteremia_clean$WBC), col = "red")
 ```
 
-![](README_files/figure-gfm/Test%20de%20normalidad%20LYMR-1.png)<!-- -->
+![](README_files/figure-gfm/qqplot_LYMR-1.png)<!-- -->
 
 Tanto el test de Kolmogorov-Smirnov como el QQplot indican que el
 porcentage de linfocitos no se asimila suficiente a una distribución
@@ -940,7 +940,7 @@ hist(log(plaquetas_bacteremia), breaks=20)
 hist(log(plaquetas_sin_bacteremia), breaks=20)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](README_files/figure-gfm/histograma_PLT-1.png)<!-- -->
 
 Observamos en los histogramas que la dsitribución no se adapta
 perfectamente a una log-normal, por lo que realizamos un test de
@@ -1301,7 +1301,7 @@ ggpairs(
     ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
     ## generated.
 
-![](README_files/figure-gfm/Matriz%20de%20cruce-1.png)<!-- -->
+![](README_files/figure-gfm/matriz_cruce-1.png)<!-- -->
 
 La PC1 parece corresponder a la respuesta immunológica, con las cargas
 más fuertes siendo los leucocitos (WBC), neutrófilos (NEUR) y linfocitos
@@ -1489,7 +1489,7 @@ bwplot(resamples_list, metric = c("ROC", "Sens", "Spec"),
        main = "Comparación en Cross-Validation (Train)")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](README_files/figure-gfm/cross-validation-1.png)<!-- -->
 
 ``` r
 # Predecir probabilidades
@@ -1535,7 +1535,7 @@ legend("bottomright",
        lwd = 2)
 ```
 
-![](README_files/figure-gfm/Predicciones-1.png)<!-- -->
+![](README_files/figure-gfm/ROC_curves-1.png)<!-- -->
 
 ``` r
 # Predicciones de clase en Test
@@ -1567,6 +1567,12 @@ knitr::kable(tabla_comparativa, digits = 3, caption = "Métricas de Evaluación 
 | Random Forest       |   0.735 |    0.665 |        0.720 |         0.660 |
 
 Métricas de Evaluación en el Conjunto de Prueba
+
+Al encontrarnos en un caso clínico, queremos maximizar la sensibilidad.
+Por lo tanto, aunque los 3 modelos tienen un rendimiento similar, los
+modelos SVM y regresión logística presentan mayor sensibilidad. Entre
+estos dos, el **SVM** con kernel radial presenta valores de accuracy y
+especificidad más elevados.
 
 ## Sección 5. Visualización
 
